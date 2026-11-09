@@ -131,6 +131,73 @@ php bin/phpunit --filter testHome    # relance un seul test (sans recréer la ba
 ---
 ## Sujet
 
+### Partie 1 – Nouvelles fonctionnalités
+
+1. Créez la page `/mes-inscriptions` (route `app_my_events`, template `event/mine.html.twig`) :
+    - elle est réservée aux utilisateurs **connectés** ;
+    - elle affiche le **nombre** d'événements auxquels l'utilisateur connecté est inscrit, puis la liste de ces événements (titre cliquable vers la page de détail, date, catégorie avec sa couleur) ;
+    - chaque événement a un bouton « **Se désinscrire** » ;
+    - « Vous n'êtes inscrit à aucun événement pour le moment. » quand il n'y en a aucun.
+
+   > La relation existe déjà : `$this->getUser()->getEvents()` donne les événements de l'utilisateur connecté.
+
+2. Dans le menu, décommentez le lien « **Mes inscriptions** » : il n'est affiché qu'aux utilisateurs connectés.
+
+3. **Pas de code dupliqué** :
+    - le HTML d'une carte d'événement ne doit exister qu'**une seule fois**. Déplacez-le dans `templates/event/_card.html.twig` et utilisez-le avec `{{ include() }}` sur l'accueil et sur « Mes inscriptions ». Le bouton « Se désinscrire » ne s'affiche que sur « Mes inscriptions » ;
+    - le bouton « Se désinscrire » utilise la route de désinscription **qui existe déjà** (pas de nouvelle route) ; après la désinscription, l'utilisateur revient sur la page d'où il vient (détail **ou** « Mes inscriptions »), avec le message flash.
+
+   Doc : <https://symfony.com/doc/7.4/templates.html#including-templates>
+
+4. **Refuser un événement** : sur la page `/validate`, décommentez le bouton « **Refuser** » à côté de « Valider ». Il **supprime** l'événement (route en `POST`, réservée aux admins), puis revient sur `/validate` avec le message flash « L'événement « … » a été refusé. »
+
+5. **Modifier un événement** :
+    - ajoutez à `Event` un **auteur** (relation vers `User`, facultative) : quand un utilisateur **connecté** ajoute un événement, il en est l'auteur. Un visiteur peut toujours ajouter un événement, sans auteur. Dans les fixtures, décommentez la ligne `$jazz->setAuthor($user);` ;
+    - créez la page `/evenement/{id}/modifier` (route `app_event_edit`, template `event/edit.html.twig`), accessible seulement à **l'auteur** de l'événement ou à un **admin**. Un visiteur est redirigé vers `/login`, les autres utilisateurs reçoivent une **403** (`throw $this->createAccessDeniedException();`) ;
+    - après l'enregistrement, retour sur la page de détail avec le message flash « L'événement a été modifié. » ;
+    - sur la page de détail, le bouton « **Modifier** » n'est affiché que si l'utilisateur peut modifier l'événement ;
+    - **pas de code dupliqué** : réutilisez le formulaire `EventType`, et le code d'upload de l'image ne doit exister qu'une seule fois dans le contrôleur (méthode privée).
+
+### Partie 2 – Tests unitaires (`TestCase`)
+
+6. `tests/Entity/EventTest.php` :
+    - teste `getRemainingPlaces()` avec un **data provider** d'au moins 3 cas : aucun inscrit, quelques inscrits, complet ;
+    - teste `getCategoryLabel()` avec un **data provider** sur les 4 catégories (ex. `conference` → `Conférence`).
+
+### Partie 3 – Tests fonctionnels (`WebTestCase`)
+
+Une méthode de test par point au minimum, dans un ou plusieurs fichiers de `tests/Controller/`.
+
+7. **Accueil** : la page répond et affiche **3** événements (`.event-card`). « Concert passé » et « Tournoi de basket » n'y sont pas.
+8. **Détail** : depuis l'accueil, un clic sur « Soirée jazz » (`clickLink`) affiche son titre dans le `h1`.
+9. **404** : `/evenement/9999` renvoie une **404**.
+10. **Catégories** : `/?categorie=sport` n'affiche qu'un événement, et le lien « Sport » a la classe `active`.
+11. **Erreurs de formulaire** : un événement sans titre ou avec 0 place affiche les messages d'erreur et n'est pas enregistré.
+
+**`make tests` doit afficher `OK` : aucun test en échec.**
+
+### Bonus – Idées de tests en plus
+
+Ces tests ne sont pas obligatoires. Chaque test bonus **qui passe** rapporte des points en plus.
+
+- **Ajout d'un événement** : soumettez le formulaire **avec une image** ; vérifiez la redirection, le message flash, et que l'événement n'apparaît **pas** sur l'accueil (il n'est pas validé).
+- **Comptes** : créez un compte, puis connectez-vous avec le formulaire de `/login` : le menu affiche « Se déconnecter ». Un mauvais mot de passe affiche « Identifiants invalides ».
+- **Inscription** : l'inscription de `user@test.fr` à « Soirée jazz » fait passer les places restantes à **79**, et il voit alors **2** événements dans « Mes inscriptions ».
+- **Complet** : « Initiation à la poterie » affiche le badge `.badge-full` et pas de bouton « S'inscrire ».
+- **Validation** : `/validate` redirige un visiteur vers `/login` et renvoie une **403** à `user@test.fr`. Un admin valide « Tournoi de basket », qui apparaît ensuite sur l'accueil.
+- **Désinscription depuis le détail** : « Se désinscrire » sur la page « Semi-marathon » ramène sur cette page, avec **300** places restantes.
+- **Menu** : le lien « Mes inscriptions » est affiché une fois connecté et absent pour un visiteur. Le lien « Validation » n'est affiché qu'aux admins.
+- **Refuser** : après le refus, la page de détail de l'événement renvoie une **404**. `user@test.fr` ne peut pas refuser un événement (**403**).
+- **Modifier** : un visiteur ne voit pas le bouton « Modifier » et la page de modification le redirige vers `/login`. `user@test.fr` ne voit pas le bouton sur « Semi-marathon ». `admin@test.fr` voit le bouton sur « Semi-marathon » et accède à la page.
+- **Mes inscriptions** :
+    - un visiteur est redirigé vers `/login` ;
+    - `user@test.fr` voit **1** événement : « Semi-marathon » ;
+    - après « Se désinscrire », il revient sur `/mes-inscriptions` avec le message flash, et la liste est vide.
+- **Refuser** : un admin refuse « Tournoi de basket » : il revient sur `/validate` avec le message flash, et l'événement n'est plus dans la liste.
+- **Modifier** :
+    - `user@test.fr` modifie le titre de « Soirée jazz » (son événement), et le nouveau titre s'affiche ;
+    - `user@test.fr` reçoit une **403** sur la page de modification de « Semi-marathon ».
+
 ---
 
 ## Astuces
