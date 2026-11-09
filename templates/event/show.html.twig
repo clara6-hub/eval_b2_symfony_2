@@ -18,9 +18,12 @@
                 <span class="badge">{{ event.categoryLabel }}</span>
                 <h1>{{ event.title }}</h1>
                 <p>{{ event.date|date('d/m/Y · H\\hi') }}</p>
-                {# Évaluation 2 – bouton visible seulement par l'auteur de l'événement ou un admin :
-                <a class="btn btn-small" href="#">Modifier</a>
-                #}
+
+                {% if is_granted('ROLE_ADMIN') or (app.user and event.author is defined and event.author == app.user) %}
+                    <a class="btn btn-small" href="{{ path('app_event_edit', {id: event.id}) }}">
+                        Modifier
+                    </a>
+                {% endif %}
             </div>
         </header>
 
@@ -32,24 +35,39 @@
 
             <aside class="card booking">
                 {% if event.remainingPlaces > 0 %}
-                    <p class="places"><strong>{{ event.remainingPlaces }}</strong> places restantes sur {{ event.places }}</p>
+                    <p class="places">
+                        <strong>{{ event.remainingPlaces }}</strong>
+                        places restantes sur {{ event.places }}
+                    </p>
                 {% else %}
-                    <p class="places"><span class="badge badge-full">Complet</span></p>
+                    <p class="places">
+                        <span class="badge badge-full">Complet</span>
+                    </p>
                 {% endif %}
-                <div class="progress"><span style="width: {{ event.participants|length * 100 / event.places }}%"></span></div>
+
+                <div class="progress">
+                    <span style="width: {{ event.participants|length * 100 / event.places }}%"></span>
+                </div>
 
                 {% if not app.user %}
-                    <a class="btn btn-block" href="{{ path('app_login') }}">Connectez-vous pour vous inscrire</a>
+                    <a class="btn btn-block" href="{{ path('app_login') }}">
+                        Connectez-vous pour vous inscrire
+                    </a>
                 {% elseif app.user in event.participants %}
                     <p class="muted">Vous êtes inscrit à cet événement.</p>
+
                     <form method="post" action="{{ path('app_event_unregister', {id: event.id}) }}">
-                        <button type="submit" class="btn btn-secondary btn-block">Se désinscrire</button>
+                        <button type="submit" class="btn btn-secondary btn-block">
+                            Se désinscrire
+                        </button>
                     </form>
                 {% elseif event.remainingPlaces <= 0 %}
                     <button class="btn btn-block" disabled>Complet</button>
                 {% else %}
                     <form method="post" action="{{ path('app_event_register', {id: event.id}) }}">
-                        <button type="submit" class="btn btn-block">S'inscrire</button>
+                        <button type="submit" class="btn btn-block">
+                            S'inscrire
+                        </button>
                     </form>
                 {% endif %}
 

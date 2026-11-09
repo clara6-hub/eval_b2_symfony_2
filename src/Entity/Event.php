@@ -12,7 +12,6 @@ use Symfony\Component\Validator\Constraints as Assert;
 #[ORM\Entity(repositoryClass: EventRepository::class)]
 class Event
 {
-    // Liste des catégories : libellé affiché => valeur enregistrée en base
     public const CATEGORIES = [
         'Concert' => 'concert',
         'Conférence' => 'conference',
@@ -50,9 +49,11 @@ class Event
     #[ORM\Column]
     private bool $validated = false;
 
+    #[ORM\ManyToOne(targetEntity: User::class)]
+    #[ORM\JoinColumn(nullable: true)]
+    private ?User $author = null;
+
     /**
-     * Les utilisateurs inscrits à l'événement
-     *
      * @var Collection<int, User>
      */
     #[ORM\ManyToMany(targetEntity: User::class, inversedBy: 'events')]
@@ -76,7 +77,6 @@ class Event
     public function setTitle(?string $title): static
     {
         $this->title = $title;
-
         return $this;
     }
 
@@ -88,7 +88,6 @@ class Event
     public function setDate(?\DateTime $date): static
     {
         $this->date = $date;
-
         return $this;
     }
 
@@ -100,7 +99,6 @@ class Event
     public function setInformation(?string $information): static
     {
         $this->information = $information;
-
         return $this;
     }
 
@@ -112,11 +110,9 @@ class Event
     public function setCategory(string $category): static
     {
         $this->category = $category;
-
         return $this;
     }
 
-    // Renvoie le libellé de la catégorie (ex. : "conference" => "Conférence")
     public function getCategoryLabel(): string
     {
         return array_search($this->category, self::CATEGORIES);
@@ -130,11 +126,9 @@ class Event
     public function setPlaces(?int $places): static
     {
         $this->places = $places;
-
         return $this;
     }
 
-    // Places restantes = places totales - nombre d'inscrits
     public function getRemainingPlaces(): int
     {
         return $this->places - count($this->participants);
@@ -148,7 +142,6 @@ class Event
     public function setImage(?string $image): static
     {
         $this->image = $image;
-
         return $this;
     }
 
@@ -160,7 +153,17 @@ class Event
     public function setValidated(bool $validated): static
     {
         $this->validated = $validated;
+        return $this;
+    }
 
+    public function getAuthor(): ?User
+    {
+        return $this->author;
+    }
+
+    public function setAuthor(?User $author): static
+    {
+        $this->author = $author;
         return $this;
     }
 
@@ -184,7 +187,6 @@ class Event
     public function removeParticipant(User $participant): static
     {
         $this->participants->removeElement($participant);
-
         return $this;
     }
 }

@@ -1,17 +1,29 @@
 {% extends 'base.html.twig' %}
 
-{# Évaluation 2 – page de modification : réutilisez le formulaire EventType (même formulaire que l'ajout) #}
-
 {% block title %}Modifier l'événement{% endblock %}
 
 {% block body %}
-    <div class="narrow">
-        <a class="back-link" href="#">← Retour à l'événement</a>
+<div class="narrow">
+    <a class="back-link" href="{{ path('app_event_show', {id: event.id}) }}">← Retour à l'événement</a>
 
-        <div class="card">
-            <h1>Modifier l'événement</h1>
+    <div class="card">
+        <h1>Modifier l'événement</h1>
 
-            {# Le formulaire Symfony s'affiche ici #}
-        </div>
+        {{ form_start(form) }}
+
+        {% for field in form %}
+            {% if field.vars.name != '_token' and 'submit' not in field.vars.block_prefixes %}
+                <div style="margin-bottom: 16px;">
+                    {{ form_row(field) }}
+                </div>
+            {% endif %}
+        {% endfor %}
+
+        {{ form_widget(form._token) }}
+
+        <button type="submit" class="btn">Enregistrer les modifications</button>
+
+        {{ form_end(form, {render_rest: false}) }}
     </div>
+</div>
 {% endblock %}

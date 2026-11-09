@@ -6,7 +6,9 @@
     <div class="section-head">
         <div>
             <h1>Événements à valider</h1>
-            <p class="muted">{{ events|length }} événement(s) en attente de validation.</p>
+            <p class="muted">
+                {{ events|length }} événement(s) en attente de validation.
+            </p>
         </div>
     </div>
 
@@ -25,23 +27,46 @@
                         <th></th>
                     </tr>
                 </thead>
+
                 <tbody>
                     {% for event in events %}
                         <tr>
-                            <td><a href="{{ path('app_event_show', {id: event.id}) }}">{{ event.title }}</a></td>
-                            <td>{{ event.date|date('d/m/Y H\\hi') }}</td>
-                            <td><span class="badge cat-{{ event.category }}">{{ event.categoryLabel }}</span></td>
-                            <td>{{ event.places }}</td>
-                            <td><span class="badge badge-pending">Non validé</span></td>
                             <td>
-                                <form method="post" action="{{ path('app_validate_event', {id: event.id}) }}">
-                                    <button type="submit" class="btn btn-small btn-success">Valider</button>
+                                <a href="{{ path('app_event_show', {id: event.id}) }}">
+                                    {{ event.title }}
+                                </a>
+                            </td>
+
+                            <td>{{ event.date|date('d/m/Y H\\hi') }}</td>
+
+                            <td>
+                                <span class="badge cat-{{ event.category }}">
+                                    {{ event.categoryLabel }}
+                                </span>
+                            </td>
+
+                            <td>{{ event.places }}</td>
+
+                            <td>
+                                <span class="badge badge-pending">
+                                    Non validé
+                                </span>
+                            </td>
+
+                            <td>
+                                <form method="post"
+                                      action="{{ path('app_validate_event', {id: event.id}) }}">
+                                    <button type="submit" class="btn btn-small btn-success">
+                                        Valider
+                                    </button>
                                 </form>
-                                {# Évaluation 2 – bouton « Refuser » à rendre fonctionnel :
-                                <form method="post">
-                                    <button type="submit" class="btn btn-small btn-danger">Refuser</button>
+
+                                <form method="post"
+                                      action="{{ path('app_refuse_event', {id: event.id}) }}">
+                                    <button type="submit" class="btn btn-small btn-danger">
+                                        Refuser
+                                    </button>
                                 </form>
-                                #}
                             </td>
                         </tr>
                     {% endfor %}
